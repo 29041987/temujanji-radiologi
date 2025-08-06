@@ -1,0 +1,48 @@
+[Klik kanan di bawah > Salin semua]
+// Sistem Temujanji Jabatan Radiologi - Tambah Fungsi Dashboard Statistik
+
+import { useState, useEffect } from 'react';
+import {
+  getFirestore, collection, getDocs, query
+} from "firebase/firestore";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from 'recharts';
+
+export default function TemujanjiRadiologi() {
+  const [stats, setStats] = useState([]);
+  const [showStats, setShowStats] = useState(false);
+
+  const db = getFirestore();
+
+  const fetchStats = async () => {
+    const q = query(collection(db, "temujanji"));
+    const querySnapshot = await getDocs(q);
+    const countByType = {};
+    querySnapshot.forEach((doc) => {
+      const type = doc.data().type;
+      countByType[type] = (countByType[type] || 0) + 1;
+    });
+    const chartData = Object.keys(countByType).map((type) => ({ type, count: countByType[type] }));
+    setStats(chartData);
+    setShowStats(true);
+  };
+
+  return (
+    <div className="p-4 space-y-4 max-w-4xl mx-auto">
+      <button onClick={fetchStats} className="bg-blue-500 text-white px-4 py-2 rounded">📊 Papar Statistik</button>
+      {showStats && (
+        <div className="bg-white shadow p-4 rounded">
+          <h2 className="text-xl font-bold mb-4">Jumlah Temujanji Mengikut Jenis Pemeriksaan</h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={stats} layout="vertical" margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis type="number" />
+              <YAxis dataKey="type" type="category" width={120} />
+              <Tooltip />
+              <Bar dataKey="count" fill="#4F46E5" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+    </div>
+  );
+}
